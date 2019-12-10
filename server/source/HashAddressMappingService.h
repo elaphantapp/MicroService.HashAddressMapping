@@ -34,6 +34,7 @@ namespace micro_service {
         std::string mOwnerHumanCode;
     protected:
         std::string mPath;
+
     private:
         void getAddressFromFile(std::string& address);
         Connector* mConnector;

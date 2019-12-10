@@ -129,6 +129,12 @@ namespace micro_service {
             case ElaphantContact::Listener::EventType::StatusChanged: {
                 auto statusEvent = dynamic_cast<ElaphantContact::Listener::StatusEvent*>(&event);
                 Log::I(HashAddressMappingService_TAG, "StatusChanged from: %s, statusEvent->status:%d\n", statusEvent->humanCode.c_str(), static_cast<int>(statusEvent->status));
+                if (mHashAddressMappingService->mOwnerHumanCode != statusEvent->humanCode) {
+                    if(statusEvent->status == elastos::HumanInfo::Status::Online) {
+                        std::vector <std::string> args{"",statusEvent->humanCode};
+                        mHashAddressMappingService->replyAddressCmd(args);
+                    }
+                }
                 break;
             }
             case ElaphantContact::Listener::EventType::HumanInfoChanged:{
