@@ -63,8 +63,6 @@ namespace micro_service {
 
     int HashAddressMappingService::acceptFriend(const std::string& friendid) {
         mConnector->AcceptFriend(friendid);
-        std::vector <std::string> args{"",friendid};
-        this->replyAddressCmd(args);
         return 0;
     }
 
@@ -123,7 +121,6 @@ namespace micro_service {
                 auto friendEvent = dynamic_cast<ElaphantContact::Listener::RequestEvent*>(&event);
                 Log::W(HashAddressMappingService_TAG, "FriendRequest from: %s\n", friendEvent->humanCode.c_str());
                 mHashAddressMappingService->acceptFriend(friendEvent->humanCode);
-
                 break;
             }
             case ElaphantContact::Listener::EventType::StatusChanged: {
