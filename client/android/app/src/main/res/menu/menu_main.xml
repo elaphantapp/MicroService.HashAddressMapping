@@ -3,6 +3,11 @@
     tools:context="com.elastos.microservice.hashaddressmapping.MainActivity">
     <item
         android:id="@+id/scan_qrcode"
-        android:title="@string/action_scan" />
-
+        android:title="@string/menu_scan" />
+    <item
+        android:id="@+id/history_id"
+        android:title="@string/menu_history" />
+    <item
+        android:id="@+id/about_id"
+        android:title="@string/menu_about" />
 </menu>

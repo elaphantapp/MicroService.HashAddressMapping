@@ -7,6 +7,7 @@ import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.text.Editable;
@@ -28,6 +29,8 @@ public class MainActivity extends Activity implements ContactApi.MsgListener {
     private EditText mEditText;
     private Context mContext;
     private ContactApi mContactApi;
+    private Handler mMainHandler = new Handler(Looper.getMainLooper());
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +90,7 @@ public class MainActivity extends Activity implements ContactApi.MsgListener {
                     String hash_addr = src_url.split("/")[2];
                     mContactApi.requireRealUrl(hash_addr, MainActivity.this);
                 } else {
-                    Toast.makeText(mContext, "Input Url is Invalid!", Toast.LENGTH_LONG);
+                    Toast.makeText(mContext, R.string.invalid_url, Toast.LENGTH_LONG);
                 }
             }
         }
@@ -124,10 +127,6 @@ public class MainActivity extends Activity implements ContactApi.MsgListener {
     }
 
     private String scanUserInfo() {
-       /* if (mContact == null) {
-            return (ErrorPrefix + "Contact is null.");
-        }
-*/
         Helper.scanAddress(this, result -> {
             Log.d(TAG, "result:"+result);
             Helper.showAddFriend(this, result, (summary) -> {
@@ -164,6 +163,11 @@ public class MainActivity extends Activity implements ContactApi.MsgListener {
 
     @Override
     public void onReceiveRealUrl(String url) {
-        mWebView.loadUrl(url);//访问网页
+        mMainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mWebView.loadUrl(url);//访问网页
+            }
+        });
     }
 }

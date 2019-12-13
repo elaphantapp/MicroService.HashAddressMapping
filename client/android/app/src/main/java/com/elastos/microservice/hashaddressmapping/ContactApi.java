@@ -12,34 +12,40 @@ import android.os.Process;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.elastos.sdk.elephantwallet.contact.Contact;
-import org.elastos.sdk.elephantwallet.contact.internal.AcquireArgs;
-import org.elastos.sdk.elephantwallet.contact.internal.ContactChannel;
-import org.elastos.sdk.elephantwallet.contact.internal.EventArgs;
+import org.elastos.sdk.elephantwallet.contact.Utils;
 import org.elastos.sdk.keypair.ElastosKeypair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import app.elaphant.sdk.peernode.PeerNode;
+import app.elaphant.sdk.peernode.PeerNodeListener;
+
 import static com.elastos.microservice.hashaddressmapping.MainActivity.TAG;
 
 public class ContactApi {
-    private Context mContext;
-    private Contact mContact;
-    private Contact.Listener mContactListener;
-    private Contact.DataListener mContactDataListener;
     private String ErrorPrefix = "ContactApi";
     private static final String KeypairLanguage = "english";
     private static final String KeypairWords = "";
-    private String mSavedMnemonic;
     private static final String SavedMnemonicKey = "mnemonic";
     private static final String UrlKey = "urlkey";
     private static final String FriendAddressKey = "friendaddr";
     private static final String Summary = "summary";
+
+    private static final int SERVER_STATE_NOT_CONNECT = 0;
+    private static final int SERVER_STATE_CONNECTED = 1;
+    private static final int SERVER_STATE_CONNECT_FAILED = 2;
+
+    private String mSavedMnemonic;
+    private String mUrlKey = null;
+    private Handler mHandler = new Handler(Looper.getMainLooper());
     private MsgListener mMsgListener = null;
     private JSONObject mUrls = null;
-    private String mUrlKey = null;
-
+    private Context mContext;
+    private PeerNode mPeerNode;
+    private String mSelfHumanCode;
     public interface MsgListener {
         public void onReceiveRealUrl(String url);
     }
@@ -82,11 +88,13 @@ public class ContactApi {
                 String target_url = mUrls.optString(mUrlKey, "");
                 mMsgListener.onReceiveRealUrl(target_url);
                 mMsgListener = null;
+            } else {
+                //显示
+                showServerState(SERVER_STATE_NOT_CONNECT);
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
 
     private String newAndSaveMnemonic(final String newMnemonic) {
@@ -98,7 +106,7 @@ public class ContactApi {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mContext);
         SharedPreferences.Editor editor = pref.edit();
         editor.putString(SavedMnemonicKey, mSavedMnemonic).commit();
-        if (mContact == null) { // noneed to restart
+        if (mPeerNode == null) { // noneed to restart
             return ("Success to save mnemonic:\n" + mSavedMnemonic);
         }
 
@@ -133,60 +141,109 @@ public class ContactApi {
     }
 
     public int addFriend(String friendCode, String summary) {
-        if (mContact == null) {
+        if (mPeerNode == null) {
             return -1;
         }
 
-        return mContact.addFriend(friendCode, summary);
+        return mPeerNode.addFriend(friendCode, summary);
     }
 
     private String getDeviceId() {
         String devId = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         return devId;
     }
+    private byte[] getAgentAuthHeader() {
+        String appid = "org.elastos.debug.didplugin";
+        String appkey = "b2gvzUM79yLhCbbGNWCuhSsGdqYhA7sS";
+        long timestamp = System.currentTimeMillis();
+        String auth = Utils.getMd5Sum(appkey + timestamp);
+        String headerValue = "id=" + appid + ";time=" + timestamp + ";auth=" + auth;
+        Log.i(TAG, "getAgentAuthHeader() headerValue=" + headerValue);
+
+        return headerValue.getBytes();
+    }
+    private void showServerState(final int serverState) {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                switch (serverState) {
+                    case SERVER_STATE_CONNECTED:
+                        Toast.makeText(mContext, R.string.server_connected, Toast.LENGTH_LONG).show();
+                        break;
+                    case SERVER_STATE_NOT_CONNECT:
+                        Toast.makeText(mContext, R.string.server_not_connect, Toast.LENGTH_LONG).show();
+                        break;
+                    case SERVER_STATE_CONNECT_FAILED:
+                        Toast.makeText(mContext, R.string.server_connect_failed, Toast.LENGTH_LONG).show();
+                        break;
+                }
+            }
+        });
+    }
 
     private String NewContact() {
-        if (mContact != null) {
-            return "Contact is created.";
-        }
-
-        Contact.Factory.SetLogLevel(7);
-
-        Contact.Factory.SetDeviceId(getDeviceId());
-
-        int ret = Contact.Factory.SetLocalDataDir(mContext.getCacheDir().getAbsolutePath());
-        if (ret < 0) {
-            return "Failed to call Contact.Factory.SetLocalDataDir() ret=" + ret;
-        }
-
-        mContact = Contact.Factory.Create();
-        if (mContact == null) {
-            return "Failed to call Contact.Factory.Create()";
-        }
-
-        if (mContactListener != null) {
-            mContactListener = null;
-        }
-        mContactListener = new Contact.Listener() {
+        mPeerNode = PeerNode.getInstance(mContext.getFilesDir().getAbsolutePath(),getDeviceId());
+        mPeerNode.setListener(new PeerNodeListener.Listener() {
             @Override
-            public byte[] onAcquire(AcquireArgs request) {
-                byte[] ret = processAcquire(request);
-
-                String msg = "onAcquire(): req=" + request + "\n";
-                msg += "onAcquire(): resp=" + ret + "\n";
-                showEvent(msg);
-                return ret;
+            public byte[] onAcquire(Contact.Listener.AcquireArgs request) {
+                byte[] response = null;
+                switch (request.type) {
+                    case PublicKey:
+                        response = getPublicKey().getBytes();
+                        break;
+                    case EncryptData:
+                        response = request.data;
+                        break;
+                    case DecryptData:
+                        response = request.data;
+                        break;
+                    case DidPropAppId:
+                        break;
+                    case DidAgentAuthHeader:
+                        response = getAgentAuthHeader();
+                        break;
+                    case SignData:
+                        response = signData(request.data);
+                        break;
+                    default:
+                        throw new RuntimeException("Unprocessed request: " + request);
+                }
+                return response;
             }
 
             @Override
-            public void onEvent(EventArgs event) {
-                processEvent(event);
-                String msg = "onEvent(): ev=" + event + "\n";
+            public void onError(int errCode, String errStr, String ext) {
+                showError("Contact error: " + errCode + " " + errStr);
+            }
+        });
+        mPeerNode.addMessageListener("HashAddressMappingService", new PeerNodeListener.MessageListener() {
+            @Override
+            public void onEvent(Contact.Listener.EventArgs event) {
+                switch (event.type) {
+                    case StatusChanged:
+                        Contact.Listener.StatusEvent statusEvent = (Contact.Listener.StatusEvent) event;
+                        if (!statusEvent.humanCode.equals(mSelfHumanCode)) {
+                            showServerState(SERVER_STATE_CONNECTED);
+                        }
+                        break;
+                    case FriendRequest:
+                        Contact.Listener.RequestEvent requestEvent = (Contact.Listener.RequestEvent) event;
+                        mPeerNode.acceptFriend(requestEvent.humanCode);
+                        break;
+                    case HumanInfoChanged:
+                        Contact.Listener.InfoEvent infoEvent = (Contact.Listener.InfoEvent) event;
+                        String msg = event.humanCode + " info changed: " + infoEvent.toString();
+                        showEvent(msg);
+                        break;
+                    default:
+                        Log.w(TAG, "Unprocessed event: " + event);
+                }
+                String msg = "onEvent(): ev=" + event.toString() + "\n";
                 showEvent(msg);
             }
 
             @Override
-            public void onReceivedMessage(String humanCode, ContactChannel channelType, Contact.Message message) {
+            public void onReceivedMessage(String humanCode, Contact.Channel channelType, Contact.Message message) {
                 String msg = "onRcvdMsg(): data=" + message.data + "\n";
                 msg += "onRcvdMsg(): type=" + message.type + "\n";
                 msg += "onRcvdMsg(): crypto=" + message.cryptoAlgorithm + "\n";
@@ -202,47 +259,13 @@ public class ContactApi {
 
                 }
             }
-
-            @Override
-            public void onError(int errCode, String errStr, String ext) {
-                String msg = errCode + ": " + errStr;
-                msg += "\n" + ext;
-                showError(msg);
-            }
-        };
-
-        mContact.setListener(mContactListener);
-        return "Success to create a contact instance.";
-    }
-
-    private byte[] processAcquire(AcquireArgs request) {
-        byte[] response = null;
-        switch (request.type) {
-            case PublicKey:
-                response = getPublicKey().getBytes();
-                break;
-            case EncryptData:
-                response = request.data; // plaintext
-                break;
-            case DecryptData:
-                response = request.data; // plaintext
-                break;
-            case DidPropAppId:
-//                String appId = "DC92DEC59082610D1D4698F42965381EBBC4EF7DBDA08E4B3894D530608A64AAA65BB82A170FBE16F04B2AF7B25D88350F86F58A7C1F55CC29993B4C4C29E405";
-//                response = appId.getBytes();
-                response = null;
-                break;
-            case DidAgentAuthHeader:
-                response = null;
-                break;
-            case SignData:
-                response = signData(request.data);
-                break;
-            default:
-                throw new RuntimeException("Unprocessed request: " + request);
+        });
+        Contact.UserInfo userInfo = mPeerNode.getUserInfo();
+        if (userInfo != null) {
+            mSelfHumanCode = userInfo.humanCode;
         }
 
-        return response;
+        return "Success to create a contact instance.";
     }
 
     private byte[] signData(byte[] data) {
@@ -261,24 +284,6 @@ public class ContactApi {
 
     public void showMessage(String msg) {
         Log.i(TAG, msg);
-    }
-
-    private void processEvent(EventArgs event) {
-        switch (event.type) {
-            case StatusChanged:
-                break;
-            case FriendRequest:
-                Contact.Listener.RequestEvent requestEvent = (Contact.Listener.RequestEvent) event;
-                mContact.acceptFriend(requestEvent.humanCode);
-                break;
-            case HumanInfoChanged:
-                Contact.Listener.InfoEvent infoEvent = (Contact.Listener.InfoEvent) event;
-                String msg = event.humanCode + " info changed: " + infoEvent.toString();
-                showEvent(msg);
-                break;
-            default:
-                Log.w(TAG, "Unprocessed event: " + event);
-        }
     }
 
     public void showError(String newErr) {
@@ -306,28 +311,27 @@ public class ContactApi {
     }
 
     private String StartContact() {
-        if (mContact == null) {
-            return ErrorPrefix + "Contact is null.";
+        if (mPeerNode == null) {
+            return ErrorPrefix + "PeerNode is null.";
         }
 
-        int ret = mContact.start();
+        int ret = mPeerNode.start();
         if (ret < 0) {
-            return "Failed to start contact instance. ret=" + ret;
+            return "Failed to start PeerNode instance. ret=" + ret;
         }
 
-        return "Success to start contact instance.";
+        return "Success to start PeerNode instance.";
     }
 
     private String StopContact() {
-        if (mContact == null) {
-            return ErrorPrefix + "Contact is null.";
+        if (mPeerNode == null) {
+            return ErrorPrefix + "PeerNode is null.";
         }
-
-        int ret = mContact.stop();
+        int ret = mPeerNode.stop();
         if (ret < 0) {
-            return "Failed to stop contact instance. ret=" + ret;
+            return "Failed to stop PeerNode instance. ret=" + ret;
         }
-        return "Success to stop contact instance.";
+        return "Success to stop PeerNode instance.";
     }
 
 }
