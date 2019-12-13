@@ -32,6 +32,7 @@ public:
 
     std::shared_ptr<ElaphantContact::UserInfo> GetUserInfo();
     std::vector<std::shared_ptr<ElaphantContact::FriendInfo>> ListFriendInfo();
+
     int SendMessage(const std::string& friendCode, const std::string& message);
 
 private:

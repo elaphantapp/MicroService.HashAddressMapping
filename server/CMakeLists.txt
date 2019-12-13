@@ -18,8 +18,8 @@ set(SOURCE_FILES main.cpp
 set(CHATGROUP_LIB_INCLUDE lib/include)
 INCLUDE_DIRECTORIES(${CHATGROUP_LIB_INCLUDE})
 INCLUDE_DIRECTORIES(source/)
-INCLUDE_DIRECTORIES(lib/include/Elastos.SDK.Contact)
-INCLUDE_DIRECTORIES(lib/include/Elastos.SDK.Keypair.C)
+INCLUDE_DIRECTORIES(./lib/include/Elastos.SDK.Contact)
+INCLUDE_DIRECTORIES(./lib/include/Elastos.SDK.Keypair.C)
 LINK_DIRECTORIES("source/")
 
 add_executable(hashAddressMappingService ${SOURCE_FILES})
