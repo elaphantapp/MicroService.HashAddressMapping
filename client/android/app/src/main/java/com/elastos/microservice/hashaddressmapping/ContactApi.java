@@ -89,8 +89,10 @@ public class ContactApi {
                 mMsgListener.onReceiveRealUrl(target_url);
                 mMsgListener = null;
             } else {
-                //显示
-                showServerState(SERVER_STATE_NOT_CONNECT);
+                if (mUrls == null) {
+                    //显示
+                    showServerState(SERVER_STATE_NOT_CONNECT);
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -148,7 +150,7 @@ public class ContactApi {
         return mPeerNode.addFriend(friendCode, summary);
     }
 
-    private String getDeviceId() {
+    public String getDeviceId() {
         String devId = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         return devId;
     }
@@ -297,7 +299,9 @@ public class ContactApi {
         String pubKey = ElastosKeypair.getSinglePublicKey(seedData, seedSize);
         return pubKey;
     }
-
+    public Contact.UserInfo getUserInfo() {
+        return mPeerNode.getUserInfo();
+    }
     private String getPrivateKey() {
         ElastosKeypair.Data seedData = new ElastosKeypair.Data();
         int seedSize = ElastosKeypair.getSeedFromMnemonic(seedData, mSavedMnemonic,
