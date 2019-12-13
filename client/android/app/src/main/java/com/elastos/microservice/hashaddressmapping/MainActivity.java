@@ -87,10 +87,15 @@ public class MainActivity extends Activity implements ContactApi.MsgListener {
                 Log.d(TAG, "handleMessage() returned:输入完成 " );
                 String src_url = mEditText.getText().toString();
                 if (src_url.toLowerCase().startsWith("carrier")) {
-                    String hash_addr = src_url.split("/")[2];
-                    mContactApi.requireRealUrl(hash_addr, MainActivity.this);
+                    String[]urls = src_url.split("/");
+                    if (urls.length >=2) {
+                        String hash_addr = urls[2];
+                        mContactApi.requireRealUrl(hash_addr, MainActivity.this);
+                    } else {
+                        Toast.makeText(mContext, R.string.invalid_url, Toast.LENGTH_LONG).show();
+                    }
                 } else {
-                    Toast.makeText(mContext, R.string.invalid_url, Toast.LENGTH_LONG);
+                    Toast.makeText(mContext, R.string.invalid_url, Toast.LENGTH_LONG).show();
                 }
             }
         }
