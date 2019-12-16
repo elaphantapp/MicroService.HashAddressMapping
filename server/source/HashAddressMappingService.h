@@ -12,12 +12,12 @@
 #include <thread>
 #include <regex>
 #include "Common/FileUtils.hpp"
-#include "../lib/include/Connector.h"
-#include "../lib/include/PeerListener.h"
-#include "../lib/include/PeerNode.h"
-#include "../lib/include/IMicroService.h"
-#include "../lib/include/Elastos.SDK.Contact/Contact.hpp"
-#include "../lib/include/Elastos.SDK.Contact/ContactListener.hpp"
+#include "PeerNodeSDK/Connector.h"
+#include "PeerNodeSDK/PeerListener.h"
+#include "PeerNodeSDK/PeerNode.h"
+#include "Elastos.SDK.Contact/Contact.hpp"
+#include "Elastos.SDK.Contact/ContactListener.hpp"
+
 using namespace elastos;
 
 namespace micro_service {

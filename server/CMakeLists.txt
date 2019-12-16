@@ -23,7 +23,9 @@ INCLUDE_DIRECTORIES(./lib/include/Elastos.SDK.Keypair.C)
 LINK_DIRECTORIES("source/")
 
 add_executable(hashAddressMappingService ${SOURCE_FILES})
-TARGET_LINK_LIBRARIES(hashAddressMappingService pthread sqlite3
-        "${PROJECT_SOURCE_DIR}/lib/x86_64/libcrystal.so"
-        "${PROJECT_SOURCE_DIR}/lib/x86_64/libElastos.SDK.Contact.so"
-        "${PROJECT_SOURCE_DIR}/lib/x86_64/libPeerNode.so")
+TARGET_LINK_LIBRARIES(hashAddressMappingService pthread sqlite3)
+
+pkg_search_module(pkg-Elastos.SDK.Contact REQUIRED Elastos.SDK.Contact)
+message(STATUS "Elastos.SDK.Contact include path: ${pkg-Elastos.SDK.Contact_INCLUDE_DIRS}")
+TARGET_INCLUDE_DIRECTORIES(hashAddressMappingService PRIVATE "${pkg-Elastos.SDK.Contact_INCLUDE_DIRS}" )
+TARGET_LINK_LIBRARIES(hashAddressMappingService PeerNode)

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <thread>
 #include "HashAddressMappingService.h"
-#include "lib/include/PeerNode.h"
-#include "lib/include/Elastos.SDK.Contact/Contact.hpp"
+#include "PeerNodeSDK/PeerNode.h"
+#include "Elastos.SDK.Contact/Contact.hpp"
 using namespace micro_service;
 int main(int argc,char *argv[]) {
     std::cout << "I'm ChatGroup Service !" << std::endl;
