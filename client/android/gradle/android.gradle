@@ -1,0 +1,52 @@
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion    rootProject.ext.compileSdkVersion
+    defaultConfig {
+        minSdkVersion    rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode      rootProject.ext.versionCode
+        versionName      rootProject.ext.versionName
+
+        javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
+    }
+
+    compileOptions {
+        targetCompatibility rootProject.ext.javaVersion
+        sourceCompatibility rootProject.ext.javaVersion
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            useProguard false
+//            proguardFiles getDefaultProguardFile('proguard-android.txt')
+//            if(file('proguard-rules.pro').exists() == true) {
+//                consumerProguardFiles 'proguard-rules.pro' // 传递proguard到最终app
+//            }
+        }
+        debug {
+            jniDebuggable true
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs 'src/main/java', 'src/main/kotlin'
+            aidl.srcDirs 'src/main/aidl'
+        }
+    }
+}
+
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    api fileTree(dir: 'src/main/libs', include: ['*.jar', '*.aar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:" + rootProject.ext.kotlinVersion
+}
+
+configurations {
+    release
+    debug
+}

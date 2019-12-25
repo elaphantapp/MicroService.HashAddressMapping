@@ -1,0 +1,56 @@
+apply plugin: 'maven-publish'
+
+publishing {
+  publications {
+    maven(MavenPublication) {
+      version    project.ext.publishVersion
+      groupId    project.ext.publishGroupId
+      artifactId project.ext.publishArtifactId
+      artifact   project.ext.publishArtifact
+
+      pom.withXml {
+        def dependenciesNode = asNode().appendNode('dependencies')
+
+        project.configurations.implementation.allDependencies.each {
+          def depClass = it.class.toString()
+          if(!depClass.contains("DefaultExternalModuleDependency")
+          && !depClass.contains("DefaultProjectDependency")) {
+            println "ignore dependency " + depClass
+            return;
+          }
+          if(it.name.contains("kotlin-stdlib")) {
+            println "ignore dependency " + it
+            return;
+          }
+          println "add depend project " + it.name
+
+          def depGroup = it.group
+          def depName = it.name
+          def depVersion = it.version
+          if(depClass.contains("DefaultProjectDependency")) {
+            def depProject = it.dependencyProject
+            depGroup = depProject.ext.publishGroupId
+            depName = depProject.name
+            depVersion = depProject.versionName
+          }
+
+          println "add dependency " + it
+          def dependencyNode = dependenciesNode.appendNode('dependency')
+          dependencyNode.appendNode('groupId', depGroup)
+          dependencyNode.appendNode('artifactId', depName)
+          dependencyNode.appendNode('version', depVersion)
+          dependencyNode.appendNode('scope', 'compile')
+        }
+      }
+    }
+  }
+  repositories {
+    maven {
+      url "${buildDir}/repo"
+    }
+  }
+}
+
+tasks.withType(PublishToMavenRepository) {
+  it.dependsOn project.ext.publishDependsOn
+}

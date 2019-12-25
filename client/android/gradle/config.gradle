@@ -1,0 +1,13 @@
+ext {
+    gradleVersion = "3.4.1"
+    kotlinVersion = "1.3.20"
+    javaVersion = JavaVersion.VERSION_1_8
+
+    minSdkVersion = 16
+    targetSdkVersion = 28
+    compileSdkVersion = 28
+
+    versionCode = this.properties['versionCode'] ?: 9999
+    versionCode = versionCode as Integer
+    versionName = this.properties['versionName'] ?: '0.0.9999'
+}

@@ -1,0 +1,45 @@
+android {
+    defaultConfig {
+        ndk {
+            abiFilters "armeabi-v7a"//, "arm64-v8a", "x86_64"
+        }
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++17'
+            }
+        }
+
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+
+    buildTypes {
+        release {
+            jniDebuggable false
+        }
+        debug {
+            jniDebuggable true
+        }
+    }
+}
+
+clean {
+    delete '.externalNativeBuild'
+}
+
+afterEvaluate {
+    android{
+        buildTypes.all {
+            def buildType = it.name.substring(0, 1).toUpperCase() + it.name.substring(1)
+            def generateJsonModelTask = tasks.findByName("generateJsonModel${buildType}")
+            if(generateJsonModelTask) {
+                generateJsonModelTask.outputs.upToDateWhen { false }
+            }
+        }
+    }
+}
+
