@@ -35,8 +35,8 @@ namespace micro_service {
         printf("Service start!\n");
         std::shared_ptr<PeerListener::MessageListener> message_listener = std::make_shared<HashAddressMappingMessageListener>(this);
         mConnector->SetMessageListener(message_listener);
-        int status = PeerNode::GetInstance()->GetStatus();
-        printf("HashAddressMappingService Start status: %d\n",status);
+        auto status = PeerNode::GetInstance()->GetStatus();
+        printf("HashAddressMappingService Start status: %d\n",static_cast<int>(status));
         std::shared_ptr<ElaphantContact::UserInfo> user_info = mConnector->GetUserInfo();
         if (user_info.get() != NULL) {
             user_info->getHumanCode(mOwnerHumanCode);
@@ -114,7 +114,7 @@ namespace micro_service {
     HashAddressMappingMessageListener::~HashAddressMappingMessageListener() {
     }
 
-    void HashAddressMappingMessageListener::onEvent(ContactListener::EventArgs& event) {
+    void HashAddressMappingMessageListener::onEvent(ElaphantContact::Listener::EventArgs& event) {
         Log::W(HashAddressMappingService_TAG, "onEvent type: %d\n", event.type);
         switch (event.type) {
             case ElaphantContact::Listener::EventType::FriendRequest: {
@@ -145,7 +145,7 @@ namespace micro_service {
         }
     };
 
-    void HashAddressMappingMessageListener::onReceivedMessage(const std::string& humanCode, ContactChannel channelType,
+    void HashAddressMappingMessageListener::onReceivedMessage(const std::string& humanCode, ElaphantContact::Channel channelType,
                                                      std::shared_ptr<ElaphantContact::Message> msgInfo) {
 
         auto text_data = dynamic_cast<ElaphantContact::Message::TextData*>(msgInfo->data.get());
