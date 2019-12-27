@@ -1,5 +1,0 @@
-CONTACT_GITHUB="https://github.com/elastos/Elastos.SDK.ElephantWallet.Contact";
-CONTACT_ZIPPATH="/files/3956345/";
-CONTACT_VERSION="v0.1.197";
-CONTACT_ZIPNAME="Elastos.SDK.Contact-android-v0.1.200.zip";
-CONTACT_URL="$CONTACT_GITHUB$CONTACT_ZIPPATH$CONTACT_ZIPNAME";
