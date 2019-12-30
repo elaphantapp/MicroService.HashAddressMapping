@@ -12,11 +12,10 @@
 #include <thread>
 #include <regex>
 #include "Common/FileUtils.hpp"
-#include "PeerNodeSDK/Connector.h"
-#include "PeerNodeSDK/PeerListener.h"
-#include "PeerNodeSDK/PeerNode.h"
+#include "Connector.h"
+#include "PeerListener.h"
+#include "PeerNode.h"
 #include "Elastos.SDK.Contact/Contact.hpp"
-#include "Elastos.SDK.Contact/ContactListener.hpp"
 
 using namespace elastos;
 
@@ -24,7 +23,7 @@ namespace micro_service {
     static const char *HashAddressMappingService_TAG = "HashAddressMappingService";
     class HashAddressMappingService:public std::enable_shared_from_this<HashAddressMappingService>{
     public:
-        HashAddressMappingService(const std::string& path);
+        HashAddressMappingService(const std::string& path,const std::string& info_path);
         ~HashAddressMappingService();
         int acceptFriend(const std::string& friendid);
         void receiveMessage(const std::string& friend_id, const std::string& message, std::time_t send_time);
@@ -34,7 +33,7 @@ namespace micro_service {
         std::string mOwnerHumanCode;
     protected:
         std::string mPath;
-
+        std::string mInfoPath;
     private:
         void getAddressFromFile(std::string& address);
         Connector* mConnector;
@@ -46,15 +45,15 @@ namespace micro_service {
     public:
         HashAddressMappingMessageListener( HashAddressMappingService* chatGroupService);
         ~HashAddressMappingMessageListener();
-        void onEvent(ContactListener::EventArgs& event) override ;
-        void onReceivedMessage(const std::string& humanCode, ContactChannel channelType,
+        void onEvent(ElaphantContact::Listener::EventArgs& event) override ;
+        void onReceivedMessage(const std::string& humanCode, ElaphantContact::Channel channelType,
                                std::shared_ptr<ElaphantContact::Message> msgInfo) override;
     private:
         HashAddressMappingService*mHashAddressMappingService;
     };
 
     extern "C" {
-        micro_service::HashAddressMappingService* CreateService(const char* path);
+        micro_service::HashAddressMappingService* CreateService(const char* path, const char* info_path);
         void DestroyService(micro_service::HashAddressMappingService* service);
     }
 }

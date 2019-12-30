@@ -20,8 +20,8 @@ namespace micro_service {
     /***********************************************/
     /***** static function implement ***************/
     /***********************************************/
-    HashAddressMappingService::HashAddressMappingService(const std::string& path)
-            : mPath(path){
+    HashAddressMappingService::HashAddressMappingService(const std::string& path,const std::string& info_path)
+            : mPath(path), mInfoPath(info_path){
         mConnector = new Connector(HashAddressMappingService_TAG);
         this->Start();
     }
@@ -35,12 +35,19 @@ namespace micro_service {
         printf("Service start!\n");
         std::shared_ptr<PeerListener::MessageListener> message_listener = std::make_shared<HashAddressMappingMessageListener>(this);
         mConnector->SetMessageListener(message_listener);
-        int status = PeerNode::GetInstance()->GetStatus();
-        printf("HashAddressMappingService Start status: %d\n",status);
+        auto status = PeerNode::GetInstance()->GetStatus();
+        printf("HashAddressMappingService Start status: %d\n",static_cast<int>(status));
         std::shared_ptr<ElaphantContact::UserInfo> user_info = mConnector->GetUserInfo();
         if (user_info.get() != NULL) {
             user_info->getHumanCode(mOwnerHumanCode);
             printf("Service start mOwnerHumanCode:%s\n", mOwnerHumanCode.c_str());
+            std::shared_ptr<Json> user_info_json = std::make_shared<Json>();
+            user_info->toJson(user_info_json);
+            std::string user_info_str = user_info_json->dump();
+            int data_length = user_info_str.length();
+            uint8_t data[data_length];
+            std::copy(std::begin(user_info_str), std::end(user_info_str), data);
+            FileUtils::writeToFile(mInfoPath.c_str(), data, data_length) ;
         }
         return 0;
     }
@@ -114,7 +121,7 @@ namespace micro_service {
     HashAddressMappingMessageListener::~HashAddressMappingMessageListener() {
     }
 
-    void HashAddressMappingMessageListener::onEvent(ContactListener::EventArgs& event) {
+    void HashAddressMappingMessageListener::onEvent(ElaphantContact::Listener::EventArgs& event) {
         Log::W(HashAddressMappingService_TAG, "onEvent type: %d\n", event.type);
         switch (event.type) {
             case ElaphantContact::Listener::EventType::FriendRequest: {
@@ -145,7 +152,7 @@ namespace micro_service {
         }
     };
 
-    void HashAddressMappingMessageListener::onReceivedMessage(const std::string& humanCode, ContactChannel channelType,
+    void HashAddressMappingMessageListener::onReceivedMessage(const std::string& humanCode, ElaphantContact::Channel channelType,
                                                      std::shared_ptr<ElaphantContact::Message> msgInfo) {
 
         auto text_data = dynamic_cast<ElaphantContact::Message::TextData*>(msgInfo->data.get());
@@ -162,8 +169,8 @@ namespace micro_service {
     }
 
     extern "C" {
-    micro_service::HashAddressMappingService* CreateService(const char* path) {
-        return new micro_service::HashAddressMappingService(path);
+    micro_service::HashAddressMappingService* CreateService(const char* path, const char* info_path) {
+        return new micro_service::HashAddressMappingService(path, info_path);
     }
     void DestroyService(micro_service::HashAddressMappingService* service) {
         if (service) {
