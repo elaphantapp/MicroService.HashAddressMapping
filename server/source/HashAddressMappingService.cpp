@@ -6,6 +6,7 @@
 #include <stack>
 #include <iostream>
 #include <ctime>
+#include <dlfcn.h>
 
 using namespace std;
 #include <thread>
@@ -20,6 +21,19 @@ namespace micro_service {
     /***********************************************/
     /***** static function implement ***************/
     /***********************************************/
+    static std::string getMappingFilePath()
+    {
+        Dl_info dl_info;
+        dladdr((void*)getMappingFilePath, &dl_info);
+        std::string mgrServicePath = dl_info.dli_fname;
+
+        auto dataFilePath = ghc::filesystem::path(mgrServicePath).parent_path() / "../../var/PeerNodeSDK/HashAddressMapping.txt";
+
+        std::cout << "load data from path: " << dataFilePath << '\n';
+
+        return dataFilePath;
+    }
+
     HashAddressMappingService::HashAddressMappingService(const std::string& path)
             : mPath(path){
         mConnector = new Connector(HashAddressMappingService_TAG);
@@ -87,7 +101,7 @@ namespace micro_service {
             const std::string friend_id = args[1];
             std::string message;
             std::shared_ptr <uint8_t> data = std::make_shared<uint8_t>(1024*1024);
-            std::string file_path = mPath+"/"+"HashAddressMapping.txt";
+            std::string file_path = getMappingFilePath();
             int length = FileUtils::readFromFile(file_path.c_str(), data);
             if (length == 0) {
                 message = "No Content!";
@@ -99,6 +113,9 @@ namespace micro_service {
             respJson["serviceName"] = HashAddressMappingService_TAG;
             respJson["type"] = "textMsg";
             respJson["content"] = message;
+            Log::W(HashAddressMappingService_TAG,
+                   "========================= %s",
+                   friend_id.c_str());
             int ret = mConnector->SendMessage(friend_id, respJson.dump());
             if (ret != 0) {
                 Log::I(HashAddressMappingService_TAG,
