@@ -32,3 +32,5 @@ TARGET_LINK_LIBRARIES(HashAddressMappingService PeerNode)
 install(TARGETS HashAddressMappingService
         LIBRARY DESTINATION lib/PeerNodePlugins
         ARCHIVE DESTINATION lib/PeerNodePlugins)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/resource/HashAddressMapping.txt
+        DESTINATION var/PeerNodeSDK)
