@@ -87,7 +87,7 @@ namespace micro_service {
             respJson["serviceName"] = HashAddressMappingService_TAG;
             respJson["type"] = "textMsg";
             respJson["content"] = message;
-            int ret = mConnector->SendMessage(friend_id, respJson.dump());
+            int ret = mConnector->SendMessage(friend_id, ElaphantContact::Channel::Carrier, respJson.dump());
             if (ret != 0) {
                 Log::I(HashAddressMappingService_TAG,
                        "helpCmd .c_str(): %s errno:(0x%x)",
@@ -116,7 +116,7 @@ namespace micro_service {
             Log::W(HashAddressMappingService_TAG,
                    "========================= %s",
                    friend_id.c_str());
-            int ret = mConnector->SendMessage(friend_id, respJson.dump());
+            int ret = mConnector->SendMessage(friend_id, ElaphantContact::Channel::Carrier, respJson.dump());
             if (ret != 0) {
                 Log::I(HashAddressMappingService_TAG,
                        "replyAddressCmd .c_str(): %s errno:(0x%x)",
